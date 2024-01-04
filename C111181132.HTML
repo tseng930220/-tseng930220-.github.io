@@ -1,94 +1,152 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>你的名字 - 個人網站</title>
-    <style>
-        body {
-            font-family: '微軟正黑體', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-
-        header {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 1em;
-        }
-
-        nav {
-            display: flex;
-            justify-content: center;
-            background-color: #555;
-            padding: 0.5em;
-        }
-
-        nav a {
-            color: white;
-            text-decoration: none;
-            padding: 1em;
-            margin: 0 1em;
-            font-weight: bold;
-        }
-
-        section {
-            max-width: 800px;
-            margin: auto;
-            padding: 2em;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
-            margin-bottom: 20px;
-        }
-
-        footer {
-            text-align: center;
-            padding: 1em;
-            background-color: #333;
-            color: white;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>25分得勝的貪吃蛇遊戲</title>
+  <style>
+    #game-board {
+      width: 400px;
+      height: 400px;
+      border: 1px solid #000;
+      position: relative;
+    }
+    .snake {
+      width: 20px;
+      height: 20px;
+      background-color: green;
+      position: absolute;
+    }
+    .food {
+      width: 20px;
+      height: 20px;
+      background-color: red;
+      position: absolute;
+    }
+  </style>
 </head>
 <body>
+  <div id="game-board"></div>
+  <p id="score">得分：0</p>
 
-    <header>
-        <h1>你的名字</h1>
-        <p>歡迎來到我的個人網站</p>
-    </header>
+  <script>
+    const gameBoard = document.getElementById('game-board');
+    let snake = [{ x: 200, y: 200 }];
+    let dx = 0;
+    let dy = 0;
+    let score = 0;
+    const snakeSize = 20;
+    const boardSize = 400;
+    let food = generateFoodPosition();
 
-    <nav>
-        <a href="#home">首頁</a>
-        <a href="#about">關於我</a>
-        <a href="#portfolio">作品集</a>
-        <a href="#contact">聯絡我</a>
-    </nav>
+    function drawSnake() {
+      gameBoard.innerHTML = '';
+      snake.forEach(segment => {
+        const snakeElement = document.createElement('div');
+        snakeElement.style.left = segment.x + 'px';
+        snakeElement.style.top = segment.y + 'px';
+        snakeElement.classList.add('snake');
+        gameBoard.appendChild(snakeElement);
+      });
+    }
 
-    <section id="home">
-        <h2>首頁</h2>
-        <p>這是你網站的首頁。你可以提供一個簡短的介紹或任何你想分享的資訊。</p>
-    </section>
+    function drawFood() {
+      const foodElement = document.createElement('div');
+      foodElement.style.left = food.x + 'px';
+      foodElement.style.top = food.y + 'px';
+      foodElement.classList.add('food');
+      gameBoard.appendChild(foodElement);
+    }
 
-    <section id="about">
-        <h2>關於我</h2>
-        <p>在這裡，你可以寫一些有關自己的事情，如背景、技能和興趣。</p>
-    </section>
+    function moveSnake() {
+      const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+      snake.unshift(head);
+      if (head.x === food.x && head.y === food.y) {
+        score += 1;
+        document.getElementById('score').innerText = '得分：' + score;
+        food = generateFoodPosition();
+      } else {
+        snake.pop();
+      }
+      checkCollision();
+      drawSnake();
+      drawFood();
+    }
 
-    <section id="portfolio">
-        <h2>作品集</h2>
-        <p>展示你的作品、專案或其他成就。</p>
-    </section>
+    function generateFoodPosition() {
+      const maxX = boardSize / snakeSize - 1;
+      const maxY = boardSize / snakeSize - 1;
+      const randomX = Math.floor(Math.random() * maxX) * snakeSize;
+      const randomY = Math.floor(Math.random() * maxY) * snakeSize;
+      return { x: randomX, y: randomY };
+    }
 
-    <section id="contact">
-        <h2>聯絡我</h2>
-        <p>提供你的聯絡資訊或設置一個讓訪客與你聯絡的表單。</p>
-    </section>
+    function checkCollision() {
+      const head = snake[0];
+      if (
+        head.x < 0 ||
+        head.x >= boardSize ||
+        head.y < 0 ||
+        head.y >= boardSize ||
+        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y)
+      ) {
+        clearInterval(gameInterval);
+        alert('遊戲結束！得分：' + score);
+      } else if (score >= 25) {
+        clearInterval(gameInterval);
+        alert('恭喜！你贏得了遊戲！');
+      }
+    }
 
-    <footer>
-        <p>&copy; 2023 你的名字。保留所有權利。</p>
-    </footer>
+    function restartGame() {
+      snake = [{ x: 200, y: 200 }];
+      dx = 0;
+      dy = 0;
+      score = 0;
+      document.getElementById('score').innerText = '得分：' + score;
+      food = generateFoodPosition();
+    }
 
+    function handleSpaceBar(event) {
+      const keyPressed = event.keyCode;
+      if (keyPressed === 32) {
+        clearInterval(gameInterval);
+        restartGame();
+        gameInterval = setInterval(moveSnake, 100);
+      }
+    }
+
+    function changeDirection(event) {
+      const keyPressed = event.keyCode;
+      if (keyPressed === 37 && dx !== snakeSize) {
+        dx = -snakeSize;
+        dy = 0;
+      }
+      if (keyPressed === 38 && dy !== snakeSize) {
+        dx = 0;
+        dy = -snakeSize;
+      }
+      if (keyPressed === 39 && dx !== -snakeSize) {
+        dx = snakeSize;
+        dy = 0;
+      }
+      if (keyPressed === 40 && dy !== -snakeSize) {
+        dx = 0;
+        dy = snakeSize;
+      }
+    }
+
+    document.addEventListener('keydown', changeDirection);
+    document.addEventListener('keydown', handleSpaceBar);
+
+    drawSnake();
+    drawFood();
+    let gameInterval = setInterval(moveSnake, 100);
+  </script>
 </body>
 </html>
+<div id="info">
+    <p>姓名：曾柏聖</p>
+    <p>班級：海資二甲</p>
+    <p>學號：C111181132</p>
+  </div>
+
